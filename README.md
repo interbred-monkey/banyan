@@ -1,3 +1,2 @@
-# YarApi
-Yar it's an API framework
-
+# Banyan
+Yar! It's a RESTful framework
