@@ -1,0 +1,4 @@
+/healthcheck:
+  method: GET
+  controller: HealthCheckController
+  handler: getHealthCheck

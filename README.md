@@ -1,2 +1,3 @@
-# yarapi
-Yar it's an API
+# YarApi
+Yar it's an API framework
+
