@@ -1,9 +1,10 @@
+/*global __base*/
+
 const _ = require('lodash/core');
 
-function IsRequiredAndSet(constraints, field) {
+function IsRequiredAndSet(required, field) {
 
-  if (_.isBoolean(constraints.required) && constraints.required === true && 
-      _.isUndefined(field)) {
+  if (_.isBoolean(required) && required === true && _.isUndefined(field)) {
 
     return false;
 
@@ -13,14 +14,14 @@ function IsRequiredAndSet(constraints, field) {
 
 }
 
-async function IsValidType(type, field) {
+function IsValidType(type, field) {
 
   try {
 
     let ValidationModule = require(`${__base}/Common/Validation/${type}`);
     let validationModule = new ValidationModule();
 
-    return await validationModule.ValidateType(field);
+    return validationModule.ValidateType(field);
 
   }
 
@@ -36,20 +37,19 @@ function StripUnrequiredParameters(requiredParams = {}, listToFilter = {}) {
 
   let filtered = {};
 
-  Object.entries(requiredParams).forEach( ([field, value]) => {
+  Object.entries(requiredParams).forEach( ([field]) => {
 
     filtered[field] = listToFilter[field];
 
-  })
+  });
 
   return filtered;
 
 }
 
-function ValidateBody(req, res, next) {
+async function ValidateBody(req, res, next) {
 
-  let errors = [],
-      params = {};
+  let errors = [];
 
   if (!_.isObject(req.routeParameters)) {
 
@@ -65,16 +65,25 @@ function ValidateBody(req, res, next) {
 
     }
 
-    if (!IsRequiredAndSet(constraints, req.body[name])) {
+    if (!IsRequiredAndSet(constraints.required, req.body[name])) {
 
       errors.push(`${name} is a required parameter`);
       return;
 
     }
 
+    if (_.isUndefined(req.body[name])) {
+
+      return;
+
+    }
+
     try {
 
-      if (!IsValidType(constraints.type, req.body[name])) {
+      let isValueValid;
+      [isValueValid, req.body[name]] = IsValidType(constraints.type, req.body[name]);
+
+      if (!isValueValid) {
 
         errors.push(`${name} is not a valid ${constraints.type}`);
         return;
@@ -85,12 +94,11 @@ function ValidateBody(req, res, next) {
 
     catch(e) {
 
-      console.log(`Error: ${e.message}`);
-      return;
+      throw e;
 
     }
 
-  })
+  });
 
   if (errors.length > 0) {
 
@@ -99,7 +107,6 @@ function ValidateBody(req, res, next) {
   }
 
   req.body = StripUnrequiredParameters(req.routeParameters, req.body);
-
   return next();
 
 }

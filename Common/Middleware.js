@@ -1,3 +1,5 @@
+/*global __base*/
+
 const _     = require('lodash/core'),
       fs    = require('fs');
 
@@ -7,9 +9,9 @@ class Middleware {
 
     this.CustomMiddlewareDir = customMiddlewareDir;
     this.CommonMiddlewareDir = `${__base}/Common/Middleware`;
-    this.MiddlewareList;
+    this.MiddlewareList = [];
     return;
-  
+
   }
 
   async Load() {
@@ -35,33 +37,37 @@ class Middleware {
 
   ListDir(dir) {
 
-    return new Promise( (resolve, reject) => {
+    return new Promise( (resolve) => {
 
-      fs.readdir(dir, async (err, files) => { 
+      fs.readdir(dir, async (err, files) => {
 
-        if (!_.isNull(err)) { return resolve([]); }
+        if (!_.isNull(err)) {
 
-        return resolve(files.map( (f) => { return `${dir}/${f}`; }));
+          return resolve([]);
 
-      })
+        }
 
-    })
+        return resolve(files.map( (f) => {
+
+          return `${dir}/${f}`;
+
+        }));
+
+      });
+
+    });
 
   }
 
   Apply(module) {
 
-    if (!_.isArray(this.MiddlewareList)) {
-
-      return;
-
-    }
+    module.use(this.ExtractRequestParameters);
 
     this.MiddlewareList.forEach( (path) => {
 
       module.use(require(path));
-    
-    })
+
+    });
 
     return;
 
@@ -75,19 +81,69 @@ class Middleware {
 
     }
 
-    Object.entries(routes).forEach( ([endpoint, route]) => {
+    Object.values(routes).map( (route) => {
 
-      module[route.method.toLowerCase()](endpoint, async (req, res, next) => {
+      module[route.method.toLowerCase()](route.uri, async (req, res, next) => {
 
         req.routeParameters = (_.isObject(route.parameters)?route.parameters:{});
 
         return next();
 
-      })
+      });
 
-    })
+    });
 
     return;
+
+  }
+
+  SetupRouteUriParameterExtraction(module, routes) {
+
+    if (!_.isObject(routes)) {
+
+      return;
+
+    }
+
+    Object.values(routes).map( (route) => {
+
+      let matches = route.uri.match(/:([.a-z0-9_-]+)/g);
+
+      if (!matches) {
+
+        return;
+
+      }
+
+      matches = matches.map( (param) => {
+
+        return param.replace(':', '');
+
+      });
+
+      module.param(matches, (req, res, next) => {
+
+        req.uriParams = req.params;
+
+        return next();
+
+      });
+
+    });
+
+    return;
+
+  }
+
+  ExtractRequestParameters(req, res, next) {
+
+    let queryParameters = {};
+
+    Object.assign(queryParameters, req.body, req.params, req.query, req.uriParams);
+
+    req.body = queryParameters;
+
+    return next();
 
   }
 

@@ -1,18 +1,33 @@
 {
-  "name": "Banyan",
+  "name": "Authible",
   "version": "1.0.0",
   "main": "main.js",
   "license": "MIT",
   "dependencies": {
+    "bcrypt": "^1.0.3",
     "dotenv": "^4.0.0",
     "express": "^4.16.2",
+    "express-async-handler": "^0.0.2",
+    "helmet": "^3.9.0",
     "js-yaml": "^3.10.0",
+    "jsonwebtoken": "^8.1.0",
     "lodash": "^4.17.4",
-    "request": "^2.83.0"
+    "lurl": "^0.0.2",
+    "moment": "^2.19.1",
+    "mongodb": "^2.2.33",
+    "request": "^2.83.0",
+    "spm-agent-nodejs": "^1.30.9",
+    "uuid": "^3.1.0",
+    "winston": "^2.4.0",
+    "winston-logsene": "^1.2.4"
   },
   "devDependencies": {
     "chai": "^4.1.2",
-    "eslint": "^4.10.0",
+    "eslint": "^4.11.0",
     "mocha": "^4.0.1"
+  },
+  "scripts": {
+    "install-production": "yarn install --production true",
+    "start": "forever start Main.js"
   }
 }

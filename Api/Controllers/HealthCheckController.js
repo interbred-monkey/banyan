@@ -1,8 +1,8 @@
 class HealthCheck {
-  
+
   constructor() {}
 
-  async getHealthCheck(params) {
+  async getHealthCheck() {
 
     return [null];
 

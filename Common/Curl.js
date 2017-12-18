@@ -1,3 +1,6 @@
+/*global __logging*/
+/*global __formatError*/
+
 let _       = require('lodash/core'),
     request = require('request');
 
@@ -21,17 +24,32 @@ function Curl(requestParameters = {}) {
 
       if (!_.isNull(errors)) {
 
-        console.log(b);
-
+        __logging.error(e);
         return reject(errors);
 
       }
 
-      return resolve(b);
+      if (_.isString(requestParameters.returnType) && requestParameters.returnType === 'JSON') {
 
-    })
+        try {
 
-  })
+          b = JSON.parse(b);
+          return resolve(b);
+
+        }
+
+        catch(e) {
+
+          __logging.error(e);
+          return reject(e.message);
+
+        }
+
+      }
+
+    });
+
+  });
 
 }
 
@@ -39,19 +57,19 @@ function CheckForErrors(err, res) {
 
   if (!_.isNull(err)) {
 
-    return ['unable to complete request', err];
+    return [new Error('unable to complete request'), err];
 
   }
 
   if (!_.isObject(res) || !_.isNumber(res.statusCode)) {
 
-    return ['unknown error returned from curl library'];
+    return __formatError('unknown error returned from curl library');
 
   }
 
   if (res.statusCode !== 200 && res.statusCode !== 201) {
 
-    return [`http request returned the error code ${res.statusCode}`];
+    return __formatError(`http request returned the error code ${res.statusCode}`);
 
   }
 

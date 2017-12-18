@@ -1,13 +1,13 @@
 let _ = require('lodash/core');
 
 class String {
-  
-  async ValidateType(value) {
 
-    return _.isString(value);
+  ValidateType(value) {
+
+    return [_.isString(value), value];
 
   }
-   
+
 }
 
-module.exports = String
+module.exports = String;
