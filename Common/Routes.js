@@ -49,6 +49,12 @@ class Routes {
 
         return resolve(files.map( (f) => {
 
+          if (!f.match(/\.yaml|\.yml/gi)) {
+
+            return;
+
+          }
+
           return `${this.RoutesDir}/${f}`;
 
         }));
