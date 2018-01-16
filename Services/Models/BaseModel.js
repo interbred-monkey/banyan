@@ -11,9 +11,9 @@ class BaseModel {
 
   constructor() {}
 
-  CreateDBConnection(collection) {
+  async CreateDBConnection(collection) {
 
-    db.UseCollection(collection);
+    await db.UseCollection(collection);
 
     return;
 

@@ -5,7 +5,7 @@ global.__base = __dirname;
 
 require('dotenv').config();
 const fs      = require('fs'),
-      Db      = require(`${__base}/Common/Db.js`),
+      Db      = require(`${__base}/Common/DbDrivers/MongoDB.js`),
       Logging = require(`${__base}/Common/Logging.js`);
 
 global.__formatError  = require(`${__base}/Common/FormatError.js`);

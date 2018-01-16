@@ -2,22 +2,22 @@
 /*global __formatError*/
 
 const _         = require('lodash/core'),
-      DbLibrary = require('mongodb');
+      Library   = require('mongodb');
 
-class DB {
+class Mongo {
 
   constructor() {
 
-    const DbConfig = {
-      autoReconnect: true,
-      reconnectTries: 10,
+    const dbConfig = {
+      autoReconnect: process.env.DB_AUTORECONNECT || true,
+      reconnectTries: process.env.DB_RECONNECTION_RETRIES || 10,
       socketTimeoutMS: process.env.DB_TIMEOUT || 60000,
       promiseLibrary: Promise
     };
 
     const connectionUri = this.CreateConnectionUri();
 
-    DbLibrary.connect(connectionUri, DbConfig)
+    Library.connect(connectionUri, dbConfig)
     .then( (db) => {
 
       this.Db = db;
@@ -56,7 +56,7 @@ class DB {
 
   }
 
-  UseCollection(collection) {
+  async UseCollection(collection) {
 
     if (!_.isUndefined(this[collection])) {
 
@@ -334,4 +334,4 @@ class DB {
 
 }
 
-module.exports = DB;
+module.exports = Mongo;
