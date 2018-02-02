@@ -1,0 +1,9 @@
+postSomeData:
+  uri: /somedata
+  method: POST
+  controller: TestController
+  handler: postSomeData
+  parameters:
+    data:
+      type: string
+      required: true

@@ -8,6 +8,8 @@ class PostgreSQL {
 
   constructor() {
 
+    this.Prefix = process.env.DB_TABLE_PREFIX;
+
     const dbConfig = {
       connectionTimeoutMillis: process.env.DB_TIMEOUT || 60000,
       connectionString: this.CreateConnectionUri()
@@ -40,26 +42,27 @@ class PostgreSQL {
 
   }
 
-  UseCollection(collection) {
+  async CreateConnection() {
 
-    if (!_.isUndefined(this[collection])) {
+    try {
 
-      return;
+      return [null, await this.Db.connect()];
 
     }
 
-    this.Db.connect()
-    .then( (client) => {
-
-      this[collection] = client;
-
-    })
-    .catch( (e) => {
+    catch(e) {
 
       __logging.error(e);
-      return __formatError('There was an error connecting to the DB');
+      return [__formatError('There was an error connecting to the DB')];
 
-    });
+    }
+
+  }
+
+  CloseConnection(connection) {
+
+    connection.release();
+    return;
 
   }
 
@@ -98,10 +101,10 @@ class PostgreSQL {
 
     }
 
-    return `INSERT INTO ${collection}
+    return `INSERT INTO ${this.Prefix}.${collection}
               (${Object.keys(document).join(', ')}
             VALUES
-              (${Object.values(document).join('", "')});`;
+              ("${Object.values(document).join('", "')});`;
 
   }
 
@@ -115,10 +118,10 @@ class PostgreSQL {
 
     query = this.GenerateWhere(query);
 
-    return `REPLACE INTO ${collection}
+    return `REPLACE INTO ${this.Prefix}.${collection}
               (${Object.keys(document).join(', ')}
             VALUES
-              (${Object.values(document).join('", "')})
+              ("${Object.values(document).join('", "')})
             ${query};`;
 
   }
@@ -127,7 +130,7 @@ class PostgreSQL {
 
     query = this.GenerateWhere(query);
 
-    return `DELETE FROM ${collection}
+    return `DELETE FROM ${this.Prefix}.${collection}
             ${query};`;
 
   }
@@ -137,12 +140,12 @@ class PostgreSQL {
     (_.isArray(fields)?fields = fields.join(', '):'');
     query = this.GenerateWhere(query);
 
-    return `SELECT ${fields} FROM ${collection}
+    return `SELECT ${fields} FROM ${this.Prefix}.${collection}
             ${query};`;
 
   }
 
-  async Insert(collection, document, terminateConnection = true) {
+  async Insert(connection, collection, document) {
 
     if (!_.isObject(document)) {
 
@@ -153,8 +156,7 @@ class PostgreSQL {
     try {
 
       const statement = this.GenerateInsert(collection, document);
-      let result  = await this[collection].query(statement);
-      (terminateConnection === true?this[collection].release():'');
+      let result  = await connection.query(statement);
 
       if (!_.isArray(result.rows) || result.rows.length !== 1) {
 
@@ -175,7 +177,7 @@ class PostgreSQL {
 
   }
 
-  async BulkInsert(collection, documents, terminateConnection = true) {
+  async BulkInsert(connection, collection, documents) {
 
     if (!_.isArray(documents)) {
 
@@ -192,8 +194,7 @@ class PostgreSQL {
 
       });
 
-      let result  = await this[collection].query(statements.join(' '));
-      (terminateConnection === true?this[collection].release():'');
+      let result  = await connection.query(statements.join(' '));
 
       if (!_.isArray(result.rows) || result.rows.length !== documents.length) {
 
@@ -214,7 +215,7 @@ class PostgreSQL {
 
   }
 
-  async Get(collection, query = null, fields = null, terminateConnection = true) {
+  async Get(connection, collection, query = null, fields = null) {
 
     if (!_.isObject(query) && !_.isString(query)) {
 
@@ -225,8 +226,7 @@ class PostgreSQL {
     try {
 
       const statement = (_.isString(query)?query:this.GenerateSelect(collection, fields, query));
-      let result  = await this[collection].query(statement);
-      (terminateConnection === true?this[collection].release():'');
+      let result  = await connection.query(statement);
 
       if (!_.isArray(result.rows) || result.rows.length === 0) {
 
@@ -247,7 +247,7 @@ class PostgreSQL {
 
   }
 
-  async Search(collection, query = null, fields = null, terminateConnection = true) {
+  async Search(connection, collection, query = null, fields = null) {
 
     if (!_.isObject(query) && !_.isString(query)) {
 
@@ -258,8 +258,7 @@ class PostgreSQL {
     try {
 
       const statement = (_.isString(query)?query:this.GenerateSelect(collection, fields, query));
-      let result  = await this[collection].query(statement);
-      (terminateConnection === true?this[collection].release():'');
+      let result  = await connection.query(statement);
 
       if (!_.isArray(result.rows) || result.rows.length < 1) {
 
@@ -280,7 +279,7 @@ class PostgreSQL {
 
   }
 
-  async Update(collection, query, document, terminateConnection = true) {
+  async Update(connection, collection, query, document) {
 
     if (!_.isObject(query) && !_.isString(query)) {
 
@@ -297,8 +296,7 @@ class PostgreSQL {
     try {
 
       const statement = this.GenerateReplace(collection, document, query);
-      let result  = await this[collection].query(statement);
-      (terminateConnection === true?this[collection].release():'');
+      let result  = await connection.query(statement);
 
       if (!_.isArray(result.rows) || result.rows.length !== 1) {
 
@@ -319,7 +317,7 @@ class PostgreSQL {
 
   }
 
-  async BulkUpdate(collection, query, documents, terminateConnection = true) {
+  async BulkUpdate(connection, collection, query, documents) {
 
     if (!_.isObject(query) && !_.isString(query)) {
 
@@ -342,8 +340,7 @@ class PostgreSQL {
 
       });
 
-      let result  = await this[collection].query(statements);
-      (terminateConnection === true?this[collection].release():'');
+      let result  = await connection.query(statements);
 
       if (!_.isArray(result.rows) || result.rows.length !== documents.length) {
 
@@ -364,7 +361,7 @@ class PostgreSQL {
 
   }
 
-  async Delete(collection, query = null, terminateConnection = true) {
+  async Delete(connection, collection, query = null) {
 
     if (!_.isObject(query) && !_.isString(query)) {
 
@@ -375,8 +372,7 @@ class PostgreSQL {
     try {
 
       const statement = this.GenerateDelete(collection, query).replace(/;$/, ' LIMIT 1;');
-      let result  = await this[collection].query(statement);
-      (terminateConnection === true?this[collection].release():'');
+      let result  = await connection.query(statement);
 
       if (!_.isArray(result.rows) || result.rows.length !== 1) {
 
@@ -397,7 +393,7 @@ class PostgreSQL {
 
   }
 
-  async BulkDelete(collection, query, terminateConnection = true) {
+  async BulkDelete(connection, collection, query) {
 
     if (!_.isObject(query) && !_.isString(query)) {
 
@@ -408,8 +404,7 @@ class PostgreSQL {
     try {
 
       const statement = this.GenerateDelete(collection, query);
-      let result  = await this[collection].query(statement);
-      (terminateConnection === true?this[collection].release():'');
+      let result  = await connection.query(statement);
 
       if (!_.isArray(result.rows) || result.rows.length !== 1) {
 

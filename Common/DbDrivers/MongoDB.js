@@ -31,6 +31,30 @@ class Mongo {
 
   }
 
+  async CreateConnection(collection) {
+
+    try {
+
+      return [null, this.Db.collection(collection)];
+
+    }
+
+    catch(e) {
+
+      __logging.error(e);
+      return [__formatError('There was an error connecting to the DB')];
+
+    }
+
+  }
+
+  CloseConnection(connection) {
+
+    connection.close();
+    return;
+
+  }
+
   CreateConnectionUri() {
 
     let up        = '',
@@ -56,30 +80,7 @@ class Mongo {
 
   }
 
-  async UseCollection(collection) {
-
-    if (!_.isUndefined(this[collection])) {
-
-      return;
-
-    }
-
-    try {
-
-      this[collection] = this.Db.collection(collection);
-      return;
-
-    }
-
-    catch(e) {
-
-      throw e;
-
-    }
-
-  }
-
-  async Insert(collection, document) {
+  async Insert(connection, collection, document) {
 
     if (!_.isObject(document)) {
 
@@ -89,7 +90,7 @@ class Mongo {
 
     try {
 
-      let result  = await this[collection].insertOne(document);
+      let result  = await connection.insertOne(document);
 
       if (result.insertedCount !== 1) {
 
@@ -110,7 +111,7 @@ class Mongo {
 
   }
 
-  async BulkInsert(collection, documents) {
+  async BulkInsert(connection, collection, documents) {
 
     if (!_.isArray(documents)) {
 
@@ -120,7 +121,7 @@ class Mongo {
 
     try {
 
-      let result  = await this[collection].insertMany(documents);
+      let result  = await connection.insertMany(documents);
 
       if (result.insertedCount !== documents.length) {
 
@@ -141,7 +142,7 @@ class Mongo {
 
   }
 
-  async Get(collection, query) {
+  async Get(connection, collection, query) {
 
     if (!_.isObject(query)) {
 
@@ -151,7 +152,7 @@ class Mongo {
 
     try {
 
-      let result = await this[collection].findOne(query);
+      let result = await connection.findOne(query);
 
       if (!_.isObject(result)) {
 
@@ -172,7 +173,7 @@ class Mongo {
 
   }
 
-  async Search(collection, query) {
+  async Search(connection, collection, query) {
 
     if (!_.isObject(query)) {
 
@@ -182,7 +183,7 @@ class Mongo {
 
     try {
 
-      let results = await this[collection].find(query).toArray();
+      let results = await connection.find(query).toArray();
       return [null, results];
 
     }
@@ -196,7 +197,7 @@ class Mongo {
 
   }
 
-  async Update(collection, query, document) {
+  async Update(connection, collection, query, document) {
 
     if (!_.isObject(query)) {
 
@@ -212,7 +213,7 @@ class Mongo {
 
     try {
 
-      let result = await this[collection].updateOne(query, document, {upsert: true});
+      let result = await connection.updateOne(query, document, {upsert: true});
 
       if (result.modifiedCount !== 1) {
 
@@ -233,7 +234,7 @@ class Mongo {
 
   }
 
-  async BulkUpdate(collection, queries, documents) {
+  async BulkUpdate(connection, collection, queries, documents) {
 
     if (!_.isArray(queries)) {
 
@@ -249,7 +250,7 @@ class Mongo {
 
     try {
 
-      let result = await this[collection].updateMany(queries, documents, {upsert: true});
+      let result = await connection.updateMany(queries, documents, {upsert: true});
 
       if (result.modifiedCount < 1) {
 
@@ -270,7 +271,7 @@ class Mongo {
 
   }
 
-  async Delete(collection, query = null) {
+  async Delete(connection, collection, query = null) {
 
     if (_.isNull(query)) {
 
@@ -280,7 +281,7 @@ class Mongo {
 
     try {
 
-      let result = await this[collection].deleteOne(query);
+      let result = await connection.deleteOne(query);
 
       if (result.deletedCount !== 1) {
 
@@ -301,7 +302,7 @@ class Mongo {
 
   }
 
-  async BulkDelete(collection, query) {
+  async BulkDelete(connection, collection, query) {
 
     if (!_.isObject(query)) {
 
@@ -311,7 +312,7 @@ class Mongo {
 
     try {
 
-      let result = await this[collection].deleteMany(query);
+      let result = await connection.deleteMany(query);
 
       if (result.deletedCount < 1) {
 
