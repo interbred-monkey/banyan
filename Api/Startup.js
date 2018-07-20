@@ -125,7 +125,7 @@ class Api {
 
       let serverOptions = _.compact([await this.DefineSSLOptions(), this.Module]);
 
-      this.Protocol.createServer.apply(null, serverOptions).listen(process.env.API_PORT);
+      this.Protocol.createServer.apply(null, serverOptions).listen(process.env.API_PORT, process.env.API_IP || '0.0.0.0');
 
     }
 

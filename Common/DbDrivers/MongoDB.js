@@ -9,8 +9,9 @@ class Mongo {
   constructor() {
 
     const dbConfig = {
+      poolSize: process.env.DB_POOL_SIZE || 100,
       autoReconnect: process.env.DB_AUTORECONNECT || true,
-      reconnectTries: process.env.DB_RECONNECTION_RETRIES || 10,
+      reconnectTries: process.env.DB_REcollection_RETRIES || 10,
       socketTimeoutMS: process.env.DB_TIMEOUT || 60000,
       promiseLibrary: Promise
     };
@@ -35,23 +36,16 @@ class Mongo {
 
     try {
 
-      return [null, this.Db.collection(collection)];
+      return this.Db.collection(collection);
 
     }
 
     catch(e) {
 
       __logging.error(e);
-      return [__formatError('There was an error connecting to the DB')];
+      return null;
 
     }
-
-  }
-
-  CloseConnection(connection) {
-
-    connection.close();
-    return;
 
   }
 
@@ -80,7 +74,13 @@ class Mongo {
 
   }
 
-  async Insert(connection, collection, document) {
+  async Insert(collection, document) {
+
+    if (!_.isString(collection) || _.isEmpty(collection)) {
+
+      return __formatError('Invalid collection format provided');
+
+    }
 
     if (!_.isObject(document)) {
 
@@ -90,6 +90,7 @@ class Mongo {
 
     try {
 
+      let connection = await this.CreateConnection(collection);
       let result  = await connection.insertOne(document);
 
       if (result.insertedCount !== 1) {
@@ -111,7 +112,13 @@ class Mongo {
 
   }
 
-  async BulkInsert(connection, collection, documents) {
+  async BulkInsert(collection, documents) {
+
+    if (!_.isString(collection) || _.isEmpty(collection)) {
+
+      return __formatError('Invalid collection format provided');
+
+    }
 
     if (!_.isArray(documents)) {
 
@@ -121,6 +128,7 @@ class Mongo {
 
     try {
 
+      let connection = await this.CreateConnection(collection);
       let result  = await connection.insertMany(documents);
 
       if (result.insertedCount !== documents.length) {
@@ -142,7 +150,13 @@ class Mongo {
 
   }
 
-  async Get(connection, collection, query) {
+  async Get(collection, query) {
+
+    if (!_.isString(collection) || _.isEmpty(collection)) {
+
+      return __formatError('Invalid collection format provided');
+
+    }
 
     if (!_.isObject(query)) {
 
@@ -152,6 +166,7 @@ class Mongo {
 
     try {
 
+      let connection = await this.CreateConnection(collection);
       let result = await connection.findOne(query);
 
       if (!_.isObject(result)) {
@@ -173,7 +188,13 @@ class Mongo {
 
   }
 
-  async Search(connection, collection, query) {
+  async Search(collection, query) {
+
+    if (!_.isString(collection) || _.isEmpty(collection)) {
+
+      return __formatError('Invalid collection format provided');
+
+    }
 
     if (!_.isObject(query)) {
 
@@ -183,7 +204,9 @@ class Mongo {
 
     try {
 
+      let connection = await this.CreateConnection(collection);
       let results = await connection.find(query).toArray();
+
       return [null, results];
 
     }
@@ -197,7 +220,13 @@ class Mongo {
 
   }
 
-  async Update(connection, collection, query, document) {
+  async Update(collection, query, document) {
+
+    if (!_.isString(collection) || _.isEmpty(collection)) {
+
+      return __formatError('Invalid collection format provided');
+
+    }
 
     if (!_.isObject(query)) {
 
@@ -213,6 +242,7 @@ class Mongo {
 
     try {
 
+      let connection = await this.CreateConnection(collection);
       let result = await connection.updateOne(query, document, {upsert: true});
 
       if (result.modifiedCount !== 1) {
@@ -234,7 +264,13 @@ class Mongo {
 
   }
 
-  async BulkUpdate(connection, collection, queries, documents) {
+  async BulkUpdate(collection, queries, documents) {
+
+    if (!_.isString(collection) || _.isEmpty(collection)) {
+
+      return __formatError('Invalid collection format provided');
+
+    }
 
     if (!_.isArray(queries)) {
 
@@ -250,6 +286,7 @@ class Mongo {
 
     try {
 
+      let connection = await this.CreateConnection(collection);
       let result = await connection.updateMany(queries, documents, {upsert: true});
 
       if (result.modifiedCount < 1) {
@@ -271,7 +308,13 @@ class Mongo {
 
   }
 
-  async Delete(connection, collection, query = null) {
+  async Delete(collection, query = null) {
+
+    if (!_.isString(collection) || _.isEmpty(collection)) {
+
+      return __formatError('Invalid collection format provided');
+
+    }
 
     if (_.isNull(query)) {
 
@@ -281,6 +324,7 @@ class Mongo {
 
     try {
 
+      let connection = await this.CreateConnection(collection);
       let result = await connection.deleteOne(query);
 
       if (result.deletedCount !== 1) {
@@ -302,7 +346,13 @@ class Mongo {
 
   }
 
-  async BulkDelete(connection, collection, query) {
+  async BulkDelete(collection, query) {
+
+    if (!_.isString(collection) || _.isEmpty(collection)) {
+
+      return __formatError('Invalid collection format provided');
+
+    }
 
     if (!_.isObject(query)) {
 
@@ -312,6 +362,7 @@ class Mongo {
 
     try {
 
+      let connection = await this.CreateConnection(collection);
       let result = await connection.deleteMany(query);
 
       if (result.deletedCount < 1) {

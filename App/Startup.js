@@ -125,7 +125,7 @@ class App {
 
       let serverOptions = _.compact([await this.DefineSSLOptions(), this.Module]);
 
-      this.Protocol.createServer.apply(null, serverOptions).listen(process.env.APP_PORT);
+      this.Protocol.createServer.apply(null, serverOptions).listen(process.env.APP_PORT, process.env.APP_IP || '0.0.0.0');
 
     }
 
